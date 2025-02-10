@@ -1,10 +1,24 @@
+#define _USE_MATH_DEFINES
 
 #include "core.h"
+#include "MyShapes.h"
+
 
 using namespace std;
 
 
 // global variables
+mt19937 engine;
+uniform_real_distribution<float> range;
+uniform_real_distribution<float> colourRange;
+
+//vector<float> xValues;
+//vector<float> yValues;
+
+vector<glm::vec2> vertexCoords;
+vector<glm::vec4> coordColour;
+
+string playerShip = "Assets\\Textures\\player1_ship.png";
 
 // Example exture object
 GLuint playerTexture;
@@ -19,7 +33,23 @@ void renderScene();
 void resizeWindow(GLFWwindow* window, int width, int height);
 void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int mods);
 void updateScene();
+void setupTextures(string filename);
 
+int currentFunction = 0;
+void changeFunction();
+
+/*
+void drawTriangle();
+void drawPolygon(int _x, int _y, int _sides, float _radius);
+void drawStar(float _atX, float _atY, float _innerRadius, float _outerRadius, int _points);
+void drawTank(float _atX, float _atY, float _orientation);
+void drawOcto(float _atX, float _atY, float _radius, float _points);
+void drawOverLap();
+void drawSemiCircle();
+
+
+float randomFloat(float max);
+void movePoly();*/
 
 int main() {
 
@@ -27,6 +57,8 @@ int main() {
 	// 1. Initialisation
 	//
 	
+	//Seeded Random
+	srand(time(NULL));
 
 	// Initialise glfw and setup window
 	glfwInit();
@@ -64,57 +96,58 @@ int main() {
 	// Initialise scene - geometry and shaders etc
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // setup background colour to be black
 
+	gluOrtho2D(-1, 1, -1, 1);
+
+	random_device rd;
+	engine = mt19937(rd());
+	range = uniform_real_distribution<float>(-1.0f, 1.0f);
+	colourRange = uniform_real_distribution<float>(0.0f, 1.0f);
+
+	//Create 2 vector objects containing 100 elements all initialised to 0.0
+	//xValues = vector<float>(100, 0.0f);
+	//yValues = vector<float>(100, 0.0f);
+
+	//replacement vertexcoords container
+	vertexCoords = vector<glm::vec2>(100, glm::vec2(0.0f, 0.0f));
+	coordColour = vector<glm::vec4>(100, glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
+
+	// Iterate 100 times (once for each vertex) 
+	//and calculate and store the random x and y values
+
+	for (int i = 0; i < 100; i++)
+	{
+		float x = range(engine);
+		float y = range(engine);
+
+		float r = range(engine);
+		float g = range(engine);
+		float b = range(engine);
+		float a = range(engine);
+
+		//float size = range(engine);
+
+		//xValues[i] = x;
+		//yValues[i] = y;
+
+		vertexCoords[i] = glm::vec2(x, y);
+		coordColour[i] = glm::vec4(r, g, b, a);
+	}
+
 
 	//
 	// Setup textures
 	//
 
-	// Load image file from disk
-	auto textureImageFile = string("Assets\\Textures\\player1_ship.png");
-	FIBITMAP* bitmap = FreeImage_Load(FIF_PNG, textureImageFile.c_str(), BMP_DEFAULT);
-
-	if (bitmap) {
-
-		// If image loaded, setup new texture object in OpenGL
-		glGenTextures(1, &playerTexture); // can create more than 1!
-		
-		if (playerTexture) {
-
-			glBindTexture(GL_TEXTURE_2D, playerTexture);
-
-			// Setup texture image properties
-			glTexImage2D(
-				GL_TEXTURE_2D,
-				0,
-				GL_RGBA,
-				FreeImage_GetWidth(bitmap),
-				FreeImage_GetHeight(bitmap),
-				0,
-				GL_BGRA,
-				GL_UNSIGNED_BYTE,
-				FreeImage_GetBits(bitmap));
-
-			// Setup texture filter and wrap properties
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-		}
-
-		// Once the texture has been setup, the image data is copied into OpenGL.  We no longer need the originally loaded image
-		FreeImage_Unload(bitmap);
-	}
-	else {
-
-		cout << "Error loading image!" << endl;
-	}
+	//Calling as a function and passing a string, but cant work out the
+	// returning of the texture ID
+	setupTextures(playerShip);
 
 
 
 	//
 	// 2. Main loop
 	// 
-	
+	//renderScene();
 
 	// Loop while program is not terminated.
 	while (!glfwWindowShouldClose(window)) {
@@ -145,6 +178,7 @@ void renderScene()
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, playerTexture);
 
+	
 	glBegin(GL_QUADS);
 
 	glTexCoord2f(0.0f, 1.0f);
@@ -161,8 +195,85 @@ void renderScene()
 
 	glEnd();
 
+	
+
+	/*
 	glDisable(GL_BLEND);
 	glDisable(GL_TEXTURE_2D);
+
+	// Clear the rendering window
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glPointSize(randomFloat(100.0f));
+	glColor3ub(0, 180, 0);
+
+	glBegin(GL_POINTS);
+
+	// Render objects here...
+
+	for (int i = 0; i < 100; i++)
+	{
+		//glPointSize()
+		glVertex2f(vertexCoords[i].x, vertexCoords[i].y);
+		glColor4f(coordColour[i].r, coordColour[i].g, coordColour[i].b, coordColour[i].a);
+	}
+
+	glEnd();
+
+	//drawTriangle();
+	//drawPolygon(1, 2, 3, 4.5);
+	//drawStar(0.0f, 0.0f, 0.4f, 0.8f, 5);
+	//drawTank(0.1, 0.1, 0.1);
+	//drawOcto(0.0f, 0.0f, 0.5f, 8.0f);
+	//drawOverLap();
+	//drawSemiCircle();
+	*/
+
+}
+
+
+void setupTextures(string filename)
+{
+	// Load image file from disk
+	auto textureImageFile = filename;//string("Assets\\Textures\\player1_ship.png");
+	FIBITMAP* bitmap = FreeImage_Load(FIF_PNG, textureImageFile.c_str(), BMP_DEFAULT);
+
+	if (bitmap) {
+
+		// If image loaded, setup new texture object in OpenGL
+		glGenTextures(1, &playerTexture); // can create more than 1!
+
+		if (playerTexture) {
+
+			glBindTexture(GL_TEXTURE_2D, playerTexture);
+
+			// Setup texture image properties
+			glTexImage2D(
+				GL_TEXTURE_2D,
+				0,
+				GL_RGBA,
+				FreeImage_GetWidth(bitmap),
+				FreeImage_GetHeight(bitmap),
+				0,
+				GL_BGRA,
+				GL_UNSIGNED_BYTE,
+				FreeImage_GetBits(bitmap));
+
+			// Setup texture filter and wrap properties
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+		}
+
+		// Once the texture has been setup, the image data is copied into OpenGL.  We no longer need the originally loaded image
+		FreeImage_Unload(bitmap);
+
+	}
+	else {
+
+		cout << "Error loading image!" << endl;
+	}
 }
 
 
@@ -171,6 +282,34 @@ void resizeWindow(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);		// Draw into entire window
 }
+
+void changeFunction()
+{
+
+	currentFunction = (currentFunction + 1) % 7;
+
+	switch (currentFunction)
+	{
+	case 0: drawTriangle();
+		break;
+	case 1: drawPolygon(1, 2, 3, 4.5f);
+		break;
+	case 2: drawStar(0.0f, 0.0f, 0.4f, 0.8f, 5);
+		break;
+	case 3: drawTank(0.1f, 0.1f, 0.1f);
+		break;
+	case 4: drawOcto(0.0f, 0.0f, 0.5f, 8.0f);
+		break;
+	case 5: drawOverLap();
+		break;
+	case 6: drawSemiCircle();
+		break;
+
+	default:
+		break;
+	}
+}
+
 
 
 // Function to call to handle keyboard input
@@ -182,11 +321,20 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 		switch (key)
 		{
 			case GLFW_KEY_ESCAPE:
-				glfwSetWindowShouldClose(window, true);
-				break;
+			glfwSetWindowShouldClose(window, true);
+			break;
+
+			case GLFW_KEY_SPACE:
+			//changeFunction();
+			break;
+
+			case GLFW_KEY_LEFT_SHIFT:
+			//renderScene();
+			break;
 
 			default:
 			{
+
 			}
 		}
 	}
@@ -197,6 +345,7 @@ void keyboardHandler(GLFWwindow* window, int key, int scancode, int action, int 
 
 
 // Function called to animate elements in the scene
-void updateScene() {
-}
+void updateScene() 
+{
 
+}
